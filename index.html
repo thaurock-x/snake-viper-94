@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Snake Viper 94</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0f0f13;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      position: relative;
+    }
+
+    h1 {
+      font-size: 2.4rem;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, #00ff88, #00ccff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+    }
+
+    .info {
+      display: flex;
+      gap: 40px;
+      margin-bottom: 15px;
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
+    #score {
+      color: #00ff88;
+    }
+
+    #highscore {
+      color: #ffaa00;
+    }
+
+    #level {
+      color: #ff4444;
+    }
+
+    #gameCanvas {
+      background: #1a1a24;
+      border: 4px solid #00ff88;
+      border-radius: 8px;
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.25);
+      max-width: 95vw;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    /* Cambio dinámico del borde cuando está activo el modo sin moral (sin mover la pantalla) */
+    body.sin-moral #gameCanvas {
+      border-color: #ff4444;
+      box-shadow: 0 0 30px rgba(255, 68, 68, 0.4);
+    }
+
+    .controls {
+      margin-top: 15px;
+      text-align: center;
+      font-size: 0.95rem;
+      color: #aaa;
+      line-height: 1.5;
+    }
+
+    .controls kbd {
+      background: #333;
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid #555;
+      font-family: monospace;
+    }
+
+    .moral-btn {
+      background: #222;
+      border: 2px solid #ff4444;
+      color: #ff4444;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.9rem;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.1s;
+      margin-top: 12px;
+    }
+
+    .moral-btn.active {
+      background: #ff4444;
+      color: #111;
+      box-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+    }
+
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      backdrop-filter: blur(5px);
+    }
+
+    #overlay h2 {
+      font-size: 3rem;
+      color: #ff4444;
+      margin-bottom: 10px;
+      text-shadow: 0 0 10px rgba(255, 68, 68, 0.7);
+    }
+
+    #overlay p {
+      font-size: 1.3rem;
+      margin-bottom: 25px;
+    }
+
+    #restartBtn {
+      background: linear-gradient(90deg, #00ff88, #00ccff);
+      border: none;
+      color: #111;
+      font-size: 1.2rem;
+      font-weight: bold;
+      padding: 12px 32px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+    }
+
+    #restartBtn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.7);
+    }
+
+    .mobile-controls {
+      display: none;
+      grid-template-columns: repeat(3, 60px);
+      grid-template-rows: repeat(2, 60px);
+      gap: 8px;
+      margin-top: 15px;
+      justify-content: center;
+    }
+
+    .mobile-controls button {
+      width: 60px;
+      height: 60px;
+      font-size: 1.8rem;
+      background: #222;
+      border: 2px solid #00ff88;
+      color: #00ff88;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: all 0.1s;
+    }
+
+    .mobile-controls button:active {
+      background: #00ff88;
+      color: #111;
+      transform: scale(0.95);
+    }
+
+    #btnUp    { grid-column: 2; grid-row: 1; }
+    #btnLeft  { grid-column: 1; grid-row: 2; }
+    #btnDown  { grid-column: 2; grid-row: 2; }
+    #btnRight { grid-column: 3; grid-row: 2; }
+
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.8rem;
+      }
+
+      .info {
+        gap: 25px;
+        font-size: 1.1rem;
+      }
+
+      .controls {
+        display: none;
+      }
+
+      .mobile-controls {
+        display: grid;
+      }
+
+      #gameCanvas {
+        width: 95vw !important;
+        height: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>SNAKE VIPER 94</h1>
+
+  <div class="info">
+    <div>Puntos: <span id="score">0</span></div>
+    <div>Récord: <span id="highscore">0</span></div>
+    <div>Nivel: <span id="level">1</span></div>
+  </div>
+
+  <canvas id="gameCanvas" width="480" height="480"></canvas>
+
+  <div class="controls">
+    Controles: <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> o <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd><br>
+    Pausar: <kbd>Espacio</kbd> &nbsp;|&nbsp; Reiniciar: <kbd>R</kbd><br>
+    Modo Sin Moral: <kbd>M</kbd><br>
+    <button id="btnSinMoralDesktop" class="moral-btn">Modo Sin Moral [M]</button>
+  </div>
+
+  <div class="mobile-controls">
+    <button id="btnUp">↑</button>
+    <button id="btnLeft">←</button>
+    <button id="btnDown">↓</button>
+    <button id="btnRight">→</button>
+  </div>
+  
+  <div style="text-align: center;">
+    <button id="btnSinMoralMobile" class="moral-btn">Modo Sin Moral</button>
+  </div>
+
+  <div id="overlay">
+    <h2>¡GAME OVER!</h2>
+    <p>Puntuación final: <span id="finalScore">0</span></p>
+    <button id="restartBtn">Jugar de nuevo</button>
+  </div>
+
+  <script>
+    class SoundManager {
+      constructor() {
+        this.audioContext = null;
+        this.sounds = {};
+        this.isMuted = false;
+        this.init();
+      }
+
+      init() {
+        try {
+          this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+          console.warn('Web Audio API is not supported in this browser');
+        }
+      }
+
+      createBeep(frequency, duration, type = 'sine') {
+        if (!this.audioContext || this.isMuted) return;
+        
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        
+        oscillator.type = type;
+        oscillator.frequency.value = frequency;
+        gainNode.gain.value = 0.3;
+        
+        gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+        
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + duration);
+      }
+
+      eatFood() {
+        this.createBeep(523.25, 0.1);
+      }
+
+      gameOver() {
+        this.createBeep(261.63, 0.3);
+      }
+
+      togglePause() {
+        this.createBeep(392.00, 0.15);
+      }
+
+      levelUp() {
+        this.createBeep(659.25, 0.2);
+      }
+    }
+
+    const soundManager = new SoundManager();
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const GRID = 20;
+    const COLS = canvas.width / GRID;
+    const ROWS = canvas.height / GRID;
+
+    let snake = [];
+    let direction = { x: 1, y: 0 };
+    let nextDirection = { x: 1, y: 0 };
+    let food = {};
+    let score = 0;
+    let highScore = localStorage.getItem('snakeViperHigh') || 0;
+    let gameLoop = null;
+    let isPaused = false;
+    let isGameOver = false;
+    let speed = 120;
+    let level = 1;
+    let sinMoralMode = false;
+    let particles = [];
+
+    const scoreEl = document.getElementById('score');
+    const highscoreEl = document.getElementById('highscore');
+    const levelEl = document.getElementById('level');
+    const overlay = document.getElementById('overlay');
+    const finalScoreEl = document.getElementById('finalScore');
+    const restartBtn = document.getElementById('restartBtn');
+
+    highscoreEl.textContent = highScore;
+
+    function init() {
+      snake = [
+        { x: 8, y: 10 },
+        { x: 7, y: 10 },
+        { x: 6, y: 10 }
+      ];
+      direction = { x: 1, y: 0 };
+      nextDirection = { x: 1, y: 0 };
+      score = 0;
+      level = 1;
+      speed = 120;
+      isPaused = false;
+      isGameOver = false;
+      sinMoralMode = false;
+      particles = [];
+      
+      scoreEl.textContent = '0';
+      levelEl.textContent = '1';
+      overlay.style.display = 'none';
+      updateMoralButtons();
+      spawnFood();
+      if (gameLoop) clearInterval(gameLoop);
+      gameLoop = setInterval(update, speed);
+    }
+
+    function spawnFood() {
+      let valid = false;
+      while (!valid) {
+        food = {
+          x: Math.floor(Math.random() * COLS),
+          y: Math.floor(Math.random() * ROWS)
+        };
+        valid = !snake.some(seg => seg.x === food.x && seg.y === food.y);
+      }
+    }
+
+    function update() {
+      if (isPaused || isGameOver) return;
+
+      direction = nextDirection;
+
+      const head = {
+        x: snake[0].x + direction.x,
+        y: snake[0].y + direction.y
+      };
+
+      if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
+        if (!sinMoralMode) {
+          gameOver();
+          return;
+        } else {
+          if (head.x < 0) head.x = COLS - 1;
+          if (head.x >= COLS) head.x = 0;
+          if (head.y < 0) head.y = ROWS - 1;
+          if (head.y >= ROWS) head.y = 0;
+        }
+      }
+
+      if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
+        if (!sinMoralMode) {
+          gameOver();
+          return;
+        } else {
+          createParticles(head.x, head.y, '#ff3355');
+        }
+      }
+
+      snake.unshift(head);
+
+      if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        scoreEl.textContent = score;
+        
+        if (score > highScore) {
+          highScore = score;
+          highscoreEl.textContent = highScore;
+          localStorage.setItem('snakeViperHigh', highScore);
+        }
+        
+        const newLevel = Math.floor(score / 50) + 1;
+        if (newLevel > level) {
+          level = newLevel;
+          levelEl.textContent = level;
+          
+          if (speed > 50) {
+            speed -= 5;
+            clearInterval(gameLoop);
+            gameLoop = setInterval(update, speed);
+          }
+          
+          soundManager.levelUp();
+        }
+        
+        spawnFood();
+        createParticles(food.x, food.y, '#00ff88');
+        soundManager.eatFood();
+      } else {
+        snake.pop();
+      }
+
+      updateParticles();
+      draw();
+    }
+
+    function draw() {
+      ctx.fillStyle = '#1a1a24';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = '#252530';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= COLS; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * GRID, 0);
+        ctx.lineTo(i * GRID, canvas.height);
+        ctx.stroke();
+      }
+      for (let i = 0; i <= ROWS; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, i * GRID);
+        ctx.lineTo(canvas.width, i * GRID);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = '#ff3355';
+      ctx.shadowColor = '#ff3355';
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.arc(
+        food.x * GRID + GRID / 2,
+        food.y * GRID + GRID / 2,
+        GRID / 2 - 2,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      snake.forEach((seg, index) => {
+        if (index === 0) {
+          ctx.fillStyle = sinMoralMode ? '#ff4444' : '#00ff88';
+          ctx.shadowColor = sinMoralMode ? '#ff4444' : '#00ff88';
+          ctx.shadowBlur = 12;
+        } else {
+          const alpha = 1 - (index / snake.length) * 0.6;
+          ctx.fillStyle = `rgba(0, 220, 140, ${alpha})`;
+          ctx.shadowBlur = 0;
+        }
+
+        ctx.fillRect(
+          seg.x * GRID + 1,
+          seg.y * GRID + 1,
+          GRID - 2,
+          GRID - 2
+        );
+      });
+      ctx.shadowBlur = 0;
+      
+      drawParticles();
+    }
+
+    function createParticles(x, y, color) {
+      for (let i = 0; i < 10; i++) {
+        particles.push({
+          x: x * GRID + GRID / 2,
+          y: y * GRID + GRID / 2,
+          size: Math.random() * 5 + 2,
+          speedX: (Math.random() - 0.5) * 5,
+          speedY: (Math.random() - 0.5) * 5,
+          color: color,
+          life: 30
+        });
+      }
+    }
+
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.speedX;
+        p.y += p.speedY;
+        p.life--;
+        
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+    }
+
+    function drawParticles() {
+      particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life / 30;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    function gameOver() {
+      isGameOver = true;
+      clearInterval(gameLoop);
+      finalScoreEl.textContent = score;
+      overlay.style.display = 'flex';
+      
+      for (let i = 0; i < 50; i++) {
+        createParticles(
+          Math.floor(Math.random() * COLS),
+          Math.floor(Math.random() * ROWS),
+          '#ff4444'
+        );
+      }
+      
+      soundManager.gameOver();
+    }
+
+    function toggleSinMoral() {
+      sinMoralMode = !sinMoralMode;
+      document.body.classList.toggle('sin-moral', sinMoralMode);
+      updateMoralButtons();
+    }
+
+    function updateMoralButtons() {
+      const btnDesktop = document.getElementById('btnSinMoralDesktop');
+      const btnMobile = document.getElementById('btnSinMoralMobile');
+      
+      if (sinMoralMode) {
+        if (btnDesktop) btnDesktop.classList.add('active');
+        if (btnMobile) btnMobile.classList.add('active');
+      } else {
+        if (btnDesktop) btnDesktop.classList.remove('active');
+        if (btnMobile) btnMobile.classList.remove('active');
+      }
+    }
+
+    document.addEventListener('keydown', e => {
+      if (isGameOver && e.key.toLowerCase() === 'r') {
+        init();
+        return;
+      }
+
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        isPaused = !isPaused;
+        soundManager.togglePause();
+        return;
+      }
+      
+      if (e.key.toLowerCase() === 'm') {
+        toggleSinMoral();
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+
+      if ((key === 'arrowup' || key === 'w') && direction.y === 0) {
+        nextDirection = { x: 0, y: -1 };
+      } else if ((key === 'arrowdown' || key === 's') && direction.y === 0) {
+        nextDirection = { x: 0, y: 1 };
+      } else if ((key === 'arrowleft' || key === 'a') && direction.x === 0) {
+        nextDirection = { x: -1, y: 0 };
+      } else if ((key === 'arrowright' || key === 'd') && direction.x === 0) {
+        nextDirection = { x: 1, y: 0 };
+      }
+    });
+
+    function setDirection(x, y) {
+      if (x !== 0 && direction.x === 0) nextDirection = { x, y: 0 };
+      if (y !== 0 && direction.y === 0) nextDirection = { x: 0, y };
+    }
+
+    document.getElementById('btnUp').addEventListener('click', () => setDirection(0, -1));
+    document.getElementById('btnDown').addEventListener('click', () => setDirection(0, 1));
+    document.getElementById('btnLeft').addEventListener('click', () => setDirection(-1, 0));
+    document.getElementById('btnRight').addEventListener('click', () => setDirection(1, 0));
+
+    ['btnUp', 'btnDown', 'btnLeft', 'btnRight'].forEach(id => {
+      const btn = document.getElementById(id);
+      btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        btn.click();
+      }, { passive: false });
+    });
+
+    ['btnSinMoralDesktop', 'btnSinMoralMobile'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) {
+        btn.addEventListener('click', toggleSinMoral);
+        btn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          toggleSinMoral();
+        }, { passive: false });
+      }
+    });
+
+    restartBtn.addEventListener('click', init);
+
+    init();
+  </script>
+</body>
+</html>
