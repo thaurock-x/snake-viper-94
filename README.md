@@ -98,11 +98,11 @@ Puedes instalar la aplicación directamente en tu dispositivo Android sin pasar 
 - Efectos de luz y sombras
 - Animaciones de transición
 
-**Modo Especial "Sin Moral"**:
+**Modo Especial "PRO"**:
 
 - Modo que desactiva las reglas normales del juego
 - La serpiente puede atravesar paredes y comerse a sí misma
-- Cambios visuales en el modo sin moral
+- Cambios visuales en el modo 'PRO'
 
 **Códigos Prohibidos y Sin Moral Implementados Internamente**:
 
